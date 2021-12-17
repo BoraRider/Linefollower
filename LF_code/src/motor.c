@@ -86,10 +86,10 @@ void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t sp
 }
 
 
-uint8_t stopMotor(){
+void stopMotor(){
 	cbi(PORTA, Stby);
 }
 
-uint8_t startMotor(){
+void startMotor(){
 	sbi(PORTA, Stby);
 }

@@ -1,7 +1,10 @@
 #include "config.h"
 
+uint32_t counter_10ms;
+
 void configurate()
 {
+	sei();
     
     DDRA |= 0xC0; // diody LED i przelacznik
 	DDRD |= 0x30; // PWM do mostka H
@@ -24,5 +27,22 @@ void configurate()
 	
 	//inicjalizacja USART
 	USART_Init();
-    
+
+	counter_10ms=0;
+
+	// przerwanie na TC2 wykonywane co 10ms ( f = 100Hz )
+	TCCR2A |= (1<<WGM21);	// Tryb CTC
+	TCCR2B |= (1<<CS22) | (1<<CS21) | (1<<CS20);	// Prescaler: 1024 czyli f=15624Hz
+	OCR2A = 155;	// f dzielone przez 155 da okolo 100Hz
+	TIMSK2 |= (1<<OCIE2A);	// zezwolenie na przerwanie Compare Match
+}
+
+// Przerwanie co 10ms
+ISR(TIMER2_COMPA_vect)
+{
+	counter_10ms++;
+	if(counter_10ms > 50){
+		tbi(PORTA, BlueLed);
+		counter_10ms=0;
+	}
 }

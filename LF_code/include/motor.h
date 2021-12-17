@@ -21,7 +21,7 @@ typedef struct {
 
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction);
 void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed);
-uint8_t stopMotor();
-uint8_t startMotor();
+void stopMotor();
+void startMotor();
 
 #endif /* MOTOR_H_ */

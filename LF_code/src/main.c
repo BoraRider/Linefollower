@@ -19,11 +19,9 @@ int main(void)
 	Motor motorA, motorB;
 	motorInit( &motorA, 1, 0, 1, 0);
 	motorInit( &motorB, 2, 0, 1, 0);
-
 	//startMotor();
-	
-	setMotor( &motorA,0,1);
-	setMotor( &motorB,0,1);
+	//setMotor( &motorA,0,1);
+	//setMotor( &motorB,0,1);
 	
 	//uint8_t x=0x00;
 	//uint8_t pAscan=0x00;
@@ -54,8 +52,6 @@ int main(void)
 		//}
 		
 		_delay_ms(1000);
-		
-		//USART_Transmit(text);
 		USART_Send(data);
 		tbi(PORTA, RedLed);
     }

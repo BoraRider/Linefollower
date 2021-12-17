@@ -6,33 +6,54 @@
  */ 
 #include "motor.h"
 
-uint8_t setMotor(uint8_t motor, uint8_t speed, uint8_t direction)
+void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 {
-	if(motor==1){
-		if(direction==1){
-			sbi(PORTC, m_ctrl_A1);
-			cbi(PORTC, m_ctrl_A2);
-		}
-		if(direction==2){
+
+	if(motor->mot_id == 1)
+	{
+		if(direction == 1)
+		{
 			cbi(PORTC, m_ctrl_A1);
 			sbi(PORTC, m_ctrl_A2);
+
 		}
-		OCR1B = speed;
+		if(direction == 2)
+		{
+			sbi(PORTC, m_ctrl_A1);
+			cbi(PORTC, m_ctrl_A2);
+
+		}
+		OCR1B = pwm;
 	}
-	if(motor==2){
-		if(direction==1){
+
+	if(motor->mot_id == 2)
+	{
+		if(direction == 2)
+		{
 			sbi(PORTC, m_ctrl_B1);
 			cbi(PORTC, m_ctrl_B2);
+
 		}
-		if(direction==2){
+		if(direction == 1)
+		{
 			cbi(PORTC, m_ctrl_B1);
 			sbi(PORTC, m_ctrl_B2);
+
 		}
-		OCR1A = speed;
+		OCR1A = pwm;
 	}
 	
-	
-	return 0;
+	motor->mot_pwm = pwm;
+	motor->mot_direction = direction;
+}
+
+void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed)
+{
+	motor->mot_id = id;
+	motor->mot_direction = direct;
+	motor->mot_pwm = pwm;
+	motor->mot_speed = speed;
+
 }
 
 

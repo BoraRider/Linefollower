@@ -11,15 +11,16 @@
 
 #include "bitmanip.h"
 
-struct Motor{
+typedef struct {
 	uint8_t mot_id;
 	uint8_t mot_pwm;
 	uint8_t mot_direction;
 	uint8_t mot_speed;
-};
+}Motor;
 
 
-uint8_t setMotor(uint8_t motor, uint8_t speed, uint8_t direction);
+void setMotor(Motor *motor, uint8_t pwm, uint8_t direction);
+void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed);
 uint8_t stopMotor();
 uint8_t startMotor();
 

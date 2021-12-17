@@ -8,37 +8,24 @@
 #include "bitmanip.h"
 #include "motor.h"
 #include "uart.h"
+#include "config.h"
 
 
 int main(void)
 {
 	
-	DDRA |= 0xC0; // diody LED i przelacznik
-	DDRD |= 0x30; // PWM do mostka H
-	DDRC |= 0xF0; // GPIO do mostka H
-	DDRB |= 0x00; // czujniki lini
+	configurate();
 	
-	PORTA |= 0x11;
-	PORTC = 0x00;
-	
-	PORTB = 0x00;
-	
-	TCCR1A |= (1<<(WGM10))|(1<<(WGM11));
-	TCCR1B |= (1<<(WGM12));
-	// PWM SET ON PB1 NON-INV
-	TCCR1A |= (1<<(COM1A1));
-	TCCR1A |= (1<<(COM1B1));
-	// prescaller: 64
-	TCCR1B |= (1<<(CS11))|(1<<(CS10));
-	
-	USART_Init();
-	
+	Motor motorA, motorB;
+	motorInit( &motorA, 1, 0, 1, 0);
+	motorInit( &motorB, 2, 0, 1, 0);
+
 	//startMotor();
 	
-	//setMotor(1,0,2);
-	//setMotor(2,0,1);
+	setMotor( &motorA,0,1);
+	setMotor( &motorB,0,1);
 	
-	uint8_t x=0x00;
+	//uint8_t x=0x00;
 	//uint8_t pAscan=0x00;
 	
 	sbi(PORTA, BlueLed);
@@ -50,7 +37,7 @@ int main(void)
 	
     while (1)  
     {
-		x = PINB;
+		//x = PINB;
 		//pAscan = PINA;
 		//if( x == 0x01 )
 		//{

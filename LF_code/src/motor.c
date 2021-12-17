@@ -23,6 +23,20 @@ void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 			cbi(PORTC, m_ctrl_A2);
 
 		}
+		// Short brake
+		if(direction == 0)
+		{
+			sbi(PORTC, m_ctrl_A2);
+			sbi(PORTC, m_ctrl_A1);
+
+		}
+		// STOP
+		if(direction == 3)
+		{
+			cbi(PORTC, m_ctrl_A2);
+			cbi(PORTC, m_ctrl_A1);
+
+		}
 		OCR1B = pwm;
 	}
 
@@ -40,6 +54,21 @@ void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 			sbi(PORTC, m_ctrl_B2);
 
 		}
+		// Short brake
+		if(direction == 0)
+		{
+			sbi(PORTC, m_ctrl_B2);
+			sbi(PORTC, m_ctrl_B1);
+
+		}
+		// STOP
+		if(direction == 3)
+		{
+			cbi(PORTC, m_ctrl_B2);
+			cbi(PORTC, m_ctrl_B1);
+
+		}
+
 		OCR1A = pwm;
 	}
 	

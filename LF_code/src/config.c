@@ -1,6 +1,6 @@
 #include "config.h"
 
-uint32_t counter_10ms;
+
 
 void configurate()
 {
@@ -14,7 +14,7 @@ void configurate()
 	PORTA |= 0x11;
 	PORTC = 0x00;
 	
-	PORTB = 0x00;
+	PORTB = 0xFF;
 	
 	// ustawienie PWM na silniki
 	TCCR1A |= (1<<(WGM10))|(1<<(WGM11));
@@ -28,21 +28,17 @@ void configurate()
 	//inicjalizacja USART
 	USART_Init();
 
-	counter_10ms=0;
+
 
 	// przerwanie na TC2 wykonywane co 10ms ( f = 100Hz )
 	TCCR2A |= (1<<WGM21);	// Tryb CTC
 	TCCR2B |= (1<<CS22) | (1<<CS21) | (1<<CS20);	// Prescaler: 1024 czyli f=15624Hz
 	OCR2A = 155;	// f dzielone przez 155 da okolo 100Hz
 	TIMSK2 |= (1<<OCIE2A);	// zezwolenie na przerwanie Compare Match
-}
 
-// Przerwanie co 10ms
-ISR(TIMER2_COMPA_vect)
-{
-	counter_10ms++;
-	if(counter_10ms > 50){
-		tbi(PORTA, BlueLed);
-		counter_10ms=0;
-	}
+
+	// Przerwania zewnetrzne z enkodera na pinach (PD2 i PD3) (INT0 i INT1)
+	EICRA |= (1<<ISC10); //| (1<<ISC10); // przerwanie na Rising Edge dla INT1
+	EICRA |= (1<<ISC00); //| (1<<ISC00); // przerwanie na Rising Edge dla INT2
+	EIMSK |= (1<<INT1) | (1<<INT0); // aktywacja przerwan
 }

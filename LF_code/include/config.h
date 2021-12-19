@@ -3,6 +3,8 @@
 
 #include "bitmanip.h"
 
+
+
 void configurate();
 
 #endif

@@ -13,7 +13,7 @@
 #define BAUD 9600
 #define MYUBRR (FOSC/16/BAUD-1)
 
-#define DATA_LENGTH 10
+#define DATA_LENGTH 100
 
 void USART_Init();
 void USART_Transmit( char data );

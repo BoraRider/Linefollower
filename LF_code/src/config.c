@@ -1,7 +1,5 @@
 #include "config.h"
 
-
-
 void configurate()
 {
 	sei();

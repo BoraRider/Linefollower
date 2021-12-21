@@ -14,21 +14,14 @@
 #define MYUBRR (FOSC/16/BAUD-1)
 
 #define DATA_LENGTH 100
-
-#define UART_RX_BUF_SIZE 32
-#define UART_RX_BUF_MASK ( UART_RX_BUF_SIZE - 1 )
-
+#define UART_RX_BUF_SIZE 100
 
 #define CR 0x0D
 #define LF 0x0A
 
 volatile char UART_RxBuf[UART_RX_BUF_SIZE];
-volatile uint8_t UART_RxHead;
-volatile uint8_t UART_RxTail;
 
 volatile uint8_t uart_buf_counter;
-
-char UART_getc(void);
 
 void UART_Init();
 void UART_Transmit( char data );

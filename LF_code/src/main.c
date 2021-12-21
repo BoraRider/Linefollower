@@ -14,6 +14,9 @@ volatile uint32_t encoderA_TPS;
 volatile uint32_t encoderB_TPS;
 volatile uint8_t encoder_done_flag;
 
+// zmienna w pamieci EEPROM
+volatile uint8_t BlueLed_state EEMEM;
+
 uint32_t counter_10ms;
 uint32_t counter_encoderA;
 uint32_t counter_encoderB;
@@ -32,6 +35,14 @@ ISR(TIMER2_COMPA_vect)
 		encoder_done_flag=1;
 		counter_10ms=0;
 		
+		if(eeprom_read_byte(&BlueLed_state) == 1)
+		{
+			cbi(PORTA, BlueLed);
+		}
+		if(eeprom_read_byte(&BlueLed_state) == 0)
+		{
+			sbi(PORTA, BlueLed);
+		}
 	}
 }
 // przerwanie enkodera A
@@ -71,8 +82,6 @@ int main(void)
 	
 	//unsigned char text='a';
 	
-	
-
 	
     while (1)  
     {

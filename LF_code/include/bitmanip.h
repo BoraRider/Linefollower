@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <string.h>
+#include <avr/eeprom.h>
 
 
 #ifndef _BV

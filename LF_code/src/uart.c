@@ -6,6 +6,10 @@
  */
 #include "uart.h"
 
+
+extern volatile uint8_t BlueLed_state EEMEM;
+
+
 void UART_Init()
 {
 	
@@ -34,7 +38,7 @@ void UART_Transmit( char data )
 unsigned char UART_Receive( void )
 {
 	while ( !(UCSR0A & (1<<RXC0)) );     //oczekiwanie na dane od odebrania
-	return UDR0;                        //zwr�cenie zawarto�ci bufora z odebranymi danymi
+	return UDR0;                        //zwrocenie zawartosci bufora z odebranymi danymi
 }
 
 void UART_Send( char * data )
@@ -61,29 +65,36 @@ void UART_printBits( uint8_t n )
 	UART_Send(" \n\r");
 }
 
-char UART_getc(void)
-{
-	if( UART_RxHead = UART_RxTail ) return 0;
-
-	UART_RxTail = (UART_RxTail + 1) & UART_RX_BUF_MASK;
-	return UART_RxBuf[UART_RxTail];
-}
-
 SIGNAL( USART0_RX_vect)
 {
 	unsigned char data;
 	data = UART_Receive();
+	
 
 	if(data == CR){
 		UART_Send("\n\rZnak CR\n\r");
 		UART_Send("Odebrane dane:\n\r");
+
+		if(uart_buf_counter > 4){
+			if(UART_RxBuf[0] == 'L' && UART_RxBuf[1] == 'E' && UART_RxBuf[2] == 'D')
+			{
+				if(UART_RxBuf[4] == '1')
+				{
+					eeprom_write_byte(&BlueLed_state, 1);
+				}
+				if(UART_RxBuf[4] == '0')
+				{
+					eeprom_write_byte(&BlueLed_state, 0);
+				}
+			}
+		}
+
 		for(uint8_t i=0; i<uart_buf_counter; i++)
 		{
 			UART_Transmit(UART_RxBuf[i]);
 			UART_RxBuf[i]=' ';
 		}
 		uart_buf_counter=0;
-		tbi(PORTA, BlueLed);
 	}
 	else
 	{

@@ -24,51 +24,26 @@ ISR(TIMER2_COMPA_vect)
 {
 	counter_10ms++;
 	if(counter_10ms > 50){
-		tbi(PORTA, BlueLed);
+		tbi(PORTA, RedLed);
 		encoderA_TPS = counter_encoderA;
 		encoderB_TPS = counter_encoderB;
 		counter_encoderA = 0;
 		counter_encoderB = 0;
 		encoder_done_flag=1;
-		/*
-		sprintf(data, "%6d", encoderA_TPS);
-		USART_Send(data);
-		USART_Send("\t");
-		sprintf(data, "%6d", encoderB_TPS);
-		USART_Send(data);
-		USART_Send(" \n\r");
-		*/
 		counter_10ms=0;
 		
 	}
 }
-
+// przerwanie enkodera A
 ISR(INT0_vect)
 {
 	counter_encoderA++;
 }
+// przerwanie enkodera B
 ISR(INT1_vect)
 {
 	counter_encoderB++;
 }
-
-
-void printBits( uint8_t n )
-{
-    const uint8_t Bits = 8 * sizeof n;
-    char tmp[ Bits + 1 ];
-   
-    for( uint8_t i = 0; i < Bits; ++i )
-    {
-        tmp[ Bits - i - 1 ] = '0' + n % 2;
-        n /= 2;
-    }
-   
-    tmp[ Bits ] = 0;
-	USART_Send(tmp);
-	USART_Send(" \n\r");
-}
-
 
 int main(void)
 {
@@ -88,8 +63,8 @@ int main(void)
 	//setMotor( &motorA,0,1);
 	//setMotor( &motorB,0,1);
 	
-	uint8_t x=0x00;
-	//uint8_t pAscan=0x00;
+	uint8_t Opto=0x00; // listwa z czujnikami
+	uint8_t SW=0x00; // przelacznik 
 	
 	sbi(PORTA, BlueLed);
 	sbi(PORTA, RedLed);
@@ -101,19 +76,28 @@ int main(void)
 	
     while (1)  
     {
-		x = PINB;
+		Opto = PINB;
+		SW = PINA;
 
-		//_delay_ms(500);
-		if(encoder_done_flag == 1){
-		encoder_done_flag = 0;	
-		
-		sprintf(data, "%6d", encoderA_TPS);
-		USART_Send(data);
-		USART_Send("\t");
-		sprintf(data, "%6d", encoderB_TPS);
-		USART_Send(data);
-		USART_Send(" \n\r");
+		if(encoder_done_flag == 1)
+		{
+			encoder_done_flag = 0;
+
+			if( !( SW & (1<<Sw) ) )
+			{
+				//UART_printBits(Opto);
+			}
+			else
+			{
+				// sprintf(data, "%6d", encoderA_TPS);
+				// UART_Send(data);
+				// UART_Send("\t");
+				// sprintf(data, "%6d", encoderB_TPS);
+				// UART_Send(data);
+				// UART_Send(" \n\r");
+			}
 		}
+
 		
     }
 }

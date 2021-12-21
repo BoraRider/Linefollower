@@ -6,7 +6,9 @@ void configurate()
 {
 	sei();
     
-    DDRA |= 0xC0; // diody LED i przelacznik
+    //DDRA |= 0xC0; // diody LED i przelacznik
+	DDRA |= (1<<RedLed) | (1<<BlueLed) | (1<<Sw) | (1<<Stby);
+
 	DDRD |= 0x30; // PWM do mostka H
 	DDRC |= 0xF0; // GPIO do mostka H
 	DDRB |= 0x00; // czujniki lini
@@ -26,7 +28,7 @@ void configurate()
 	TCCR1B |= (1<<(CS11))|(1<<(CS10));
 	
 	//inicjalizacja USART
-	USART_Init();
+	UART_Init();
 
 
 

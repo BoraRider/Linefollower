@@ -15,58 +15,50 @@ void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 		{
 			cbi(PORTC, m_ctrl_A1);
 			sbi(PORTC, m_ctrl_A2);
-
 		}
 		if(direction == 2)
 		{
 			sbi(PORTC, m_ctrl_A1);
 			cbi(PORTC, m_ctrl_A2);
-
 		}
 		// Short brake
 		if(direction == 0)
 		{
 			sbi(PORTC, m_ctrl_A2);
 			sbi(PORTC, m_ctrl_A1);
-
 		}
 		// STOP
 		if(direction == 3)
 		{
 			cbi(PORTC, m_ctrl_A2);
 			cbi(PORTC, m_ctrl_A1);
-
 		}
 		OCR1B = pwm;
 	}
 
 	if(motor->mot_id == 2)
 	{
-		if(direction == 2)
+		if(direction == 1)
 		{
 			sbi(PORTC, m_ctrl_B1);
 			cbi(PORTC, m_ctrl_B2);
-
 		}
-		if(direction == 1)
+		if(direction == 2)
 		{
 			cbi(PORTC, m_ctrl_B1);
 			sbi(PORTC, m_ctrl_B2);
-
 		}
 		// Short brake
 		if(direction == 0)
 		{
 			sbi(PORTC, m_ctrl_B2);
 			sbi(PORTC, m_ctrl_B1);
-
 		}
 		// STOP
 		if(direction == 3)
 		{
 			cbi(PORTC, m_ctrl_B2);
 			cbi(PORTC, m_ctrl_B1);
-
 		}
 
 		OCR1A = pwm;
@@ -76,15 +68,13 @@ void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 	motor->mot_direction = direction;
 }
 
-void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed)
+void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm)
 {
 	motor->mot_id = id;
 	motor->mot_direction = direct;
 	motor->mot_pwm = pwm;
 	motor->mot_speed = speed;
-
 }
-
 
 void stopMotor(){
 	cbi(PORTA, Stby);
@@ -92,4 +82,13 @@ void stopMotor(){
 
 void startMotor(){
 	sbi(PORTA, Stby);
+}
+
+
+void calculateSensorPID(int8_t sensor_PID)
+{
+	if(sensor_PID > 0) // silnik A
+	{
+		
+	}
 }

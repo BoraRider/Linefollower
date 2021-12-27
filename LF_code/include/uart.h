@@ -19,10 +19,6 @@
 #define CR 0x0D
 #define LF 0x0A
 
-volatile char UART_RxBuf[UART_RX_BUF_SIZE];
-
-volatile uint8_t uart_buf_counter;
-
 void UART_Init();
 void UART_Transmit( char data );
 unsigned char UART_Receive( void );

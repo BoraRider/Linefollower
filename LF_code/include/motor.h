@@ -10,17 +10,19 @@
 #define MOTOR_H_
 
 #include "bitmanip.h"
+#include "regulator.h"
 
 typedef struct {
 	uint8_t mot_id;
 	uint8_t mot_pwm;
 	uint8_t mot_direction;
+	uint8_t mot_max_pwm;
 	uint8_t mot_speed;
 }Motor;
 
 
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction);
-void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed);
+void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm);
 void stopMotor();
 void startMotor();
 

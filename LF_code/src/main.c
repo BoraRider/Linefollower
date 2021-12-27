@@ -14,13 +14,15 @@ volatile uint32_t encoderA_TPS;
 volatile uint32_t encoderB_TPS;
 volatile uint8_t encoder_done_flag;
 
-// zmienna w pamieci EEPROM
+// zmienne w pamieci EEPROM
 volatile uint8_t BlueLed_state EEMEM;
+volatile uint8_t motorAspeed EEMEM;
+volatile uint8_t motorBspeed EEMEM;
 
 uint32_t counter_10ms;
 uint32_t counter_encoderA;
 uint32_t counter_encoderB;
-char data[DATA_LENGTH];
+volatile char data[DATA_LENGTH];
 
 // Przerwanie co 10ms
 ISR(TIMER2_COMPA_vect)
@@ -68,11 +70,11 @@ int main(void)
 	configurate();
 	
 	Motor motorA, motorB;
-	motorInit( &motorA, 1, 0, 1, 0);
-	motorInit( &motorB, 2, 0, 1, 0);
-	//startMotor();
-	//setMotor( &motorA,0,1);
-	//setMotor( &motorB,0,1);
+	motorInit( &motorA, 1, 0, 1, 0, 150);
+	motorInit( &motorB, 2, 0, 1, 0, 150);
+	startMotor();
+	setMotor( &motorA,0,1);
+	setMotor( &motorB,0,1);
 	
 	uint8_t Opto=0x00; // listwa z czujnikami
 	uint8_t SW=0x00; // przelacznik 
@@ -88,13 +90,34 @@ int main(void)
 		Opto = PINB;
 		SW = PINA;
 
+		if(eeprom_read_byte(&motorAspeed) == 0)
+		{
+			setMotor( &motorA,0,0);
+		}
+		if (eeprom_read_byte(&motorAspeed))
+		{
+			setMotor( &motorA,eeprom_read_byte(&motorAspeed),1);
+		}
+		
+		if(eeprom_read_byte(&motorBspeed) == 0)
+		{
+			setMotor( &motorB,0,0);
+		}
+		if (eeprom_read_byte(&motorBspeed))
+		{
+			setMotor( &motorB,eeprom_read_byte(&motorBspeed),1);
+		}
+		
+		
+		
+
 		if(encoder_done_flag == 1)
 		{
 			encoder_done_flag = 0;
 
 			if( !( SW & (1<<Sw) ) )
 			{
-				//UART_printBits(Opto);
+				// UART_printBits(Opto);
 			}
 			else
 			{

@@ -8,8 +8,8 @@
 
 
 extern volatile uint8_t BlueLed_state EEMEM;
-extern volatile uint8_t motorAspeed EEMEM;
-extern volatile uint8_t motorBspeed EEMEM;
+extern volatile uint8_t motorAspeed;
+extern volatile uint8_t motorBspeed;
 
 
 volatile char UART_RxBuf[UART_RX_BUF_SIZE];
@@ -118,6 +118,7 @@ SIGNAL( USART0_RX_vect)
 				element=2;
 			}
 
+			// tworzy numer przeszukujac tablice dostepnych cyfr a nastepnie co kazda iteracje petli przemnaza liczbe przez 10
 			if(UART_RxBuf[iterator] != CR && UART_RxBuf[iterator] != 'A' && UART_RxBuf[iterator] != 'B' && UART_RxBuf[iterator] != ' ')
 			{
 				recivedNumber = recivedNumber * 10;
@@ -138,18 +139,10 @@ SIGNAL( USART0_RX_vect)
 
 			iterator++;
 		}
+		// zamiana zmiennych bo inaczej zle przypisuje (do wyjasnienia)
+		motorAspeed = speedA;
+		motorBspeed = speedB;
 
-		eeprom_write_byte(&motorAspeed, speedA);
-		eeprom_write_byte(&motorBspeed, speedB);
-
-		// if(recivedNumber == 255)
-		// {
-		// 	eeprom_write_byte(&BlueLed_state, 1);
-		// }
-		// else
-		// {
-		// 	eeprom_write_byte(&BlueLed_state, 0);
-		// }
 		UART_Send("Speed1: ");
 		sprintf(data2, "%5d", speedA);
 		UART_Send(data2);

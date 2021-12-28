@@ -9,15 +9,17 @@
 #include "motor.h"
 #include "uart.h"
 #include "config.h"
+#include "regulator.h"
 
-volatile uint32_t encoderA_TPS;
-volatile uint32_t encoderB_TPS;
+//predkosci zadane
+volatile uint8_t motorAspeed;
+volatile uint8_t motorBspeed;
+
 volatile uint8_t encoder_done_flag;
+Motor motorA, motorB;
 
 // zmienne w pamieci EEPROM
 volatile uint8_t BlueLed_state EEMEM;
-volatile uint8_t motorAspeed EEMEM;
-volatile uint8_t motorBspeed EEMEM;
 
 uint32_t counter_10ms;
 uint32_t counter_encoderA;
@@ -28,23 +30,15 @@ volatile char data[DATA_LENGTH];
 ISR(TIMER2_COMPA_vect)
 {
 	counter_10ms++;
-	if(counter_10ms > 50){
+	if(counter_10ms > 5){
 		tbi(PORTA, RedLed);
-		encoderA_TPS = counter_encoderA;
-		encoderB_TPS = counter_encoderB;
+		motorA.mot_speed = counter_encoderA;
+		motorB.mot_speed = counter_encoderB;
 		counter_encoderA = 0;
 		counter_encoderB = 0;
-		encoder_done_flag=1;
+		encoder_done_flag = 1;
 		counter_10ms=0;
 		
-		if(eeprom_read_byte(&BlueLed_state) == 1)
-		{
-			cbi(PORTA, BlueLed);
-		}
-		if(eeprom_read_byte(&BlueLed_state) == 0)
-		{
-			sbi(PORTA, BlueLed);
-		}
 	}
 }
 // przerwanie enkodera A
@@ -63,15 +57,14 @@ int main(void)
 	encoder_done_flag=0;
 	counter_encoderA = 0;
 	counter_encoderB = 0;
-	encoderA_TPS=0;
-	encoderB_TPS=0;
 	counter_10ms=0;
 
 	configurate();
+
+	PID pid;
 	
-	Motor motorA, motorB;
-	motorInit( &motorA, 1, 0, 1, 0, 150);
-	motorInit( &motorB, 2, 0, 1, 0, 150);
+	motorInit( &motorA, 1, 0, 1, 0, 255, 100, 40);
+	motorInit( &motorB, 2, 0, 1, 0, 255, 100, 40);
 	startMotor();
 	setMotor( &motorA,0,1);
 	setMotor( &motorB,0,1);
@@ -82,34 +75,12 @@ int main(void)
 	sbi(PORTA, BlueLed);
 	sbi(PORTA, RedLed);
 	
-	//unsigned char text='a';
 	
 	
     while (1)  
     {
 		Opto = PINB;
-		SW = PINA;
-
-		if(eeprom_read_byte(&motorAspeed) == 0)
-		{
-			setMotor( &motorA,0,0);
-		}
-		if (eeprom_read_byte(&motorAspeed))
-		{
-			setMotor( &motorA,eeprom_read_byte(&motorAspeed),1);
-		}
-		
-		if(eeprom_read_byte(&motorBspeed) == 0)
-		{
-			setMotor( &motorB,0,0);
-		}
-		if (eeprom_read_byte(&motorBspeed))
-		{
-			setMotor( &motorB,eeprom_read_byte(&motorBspeed),1);
-		}
-		
-		
-		
+		SW = PINA;		
 
 		if(encoder_done_flag == 1)
 		{
@@ -121,12 +92,23 @@ int main(void)
 			}
 			else
 			{
-				// sprintf(data, "%6d", encoderA_TPS);
-				// UART_Send(data);
-				// UART_Send("\t");
-				// sprintf(data, "%6d", encoderB_TPS);
-				// UART_Send(data);
-				// UART_Send(" \n\r");
+				setSpeed(&motorA, motorBspeed);
+				setSpeed(&motorB, motorAspeed);
+
+				UART_Send("Az: ");
+				sprintf(data, "%3d", motorAspeed );
+				UART_Send(data);
+				UART_Send(" Aa: ");
+				sprintf(data, "%3d", motorA.mot_speed );
+				UART_Send(data);
+
+				UART_Send(" | Bz: ");
+				sprintf(data, "%3d", motorBspeed );
+				UART_Send(data);
+				UART_Send(" Ba: ");
+				sprintf(data, "%3d", motorB.mot_speed );
+				UART_Send(data);
+				UART_Send(" \n\r");
 			}
 		}
 

@@ -6,6 +6,8 @@
  */ 
 #include "motor.h"
 
+#define KP 5
+
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 {
 
@@ -68,12 +70,15 @@ void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 	motor->mot_direction = direction;
 }
 
-void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm)
+void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm, uint8_t max_speed, uint8_t min_speed)
 {
 	motor->mot_id = id;
 	motor->mot_direction = direct;
 	motor->mot_pwm = pwm;
 	motor->mot_speed = speed;
+	motor->mot_max_pwm = max_pwm;
+	motor->mot_max_speed = max_speed;
+	motor->mot_min_speed = min_speed;
 }
 
 void stopMotor(){
@@ -84,10 +89,21 @@ void startMotor(){
 	sbi(PORTA, Stby);
 }
 
-
-void calculateSensorPID(int8_t sensor_PID)
+void setSpeed(Motor *motor, uint8_t desSpeed)
 {
-	if(sensor_PID > 0) // silnik A
+	int16_t err, U;
+	err = desSpeed - motor->mot_speed;
+	U = err * KP;
+	if(U>255)U=255;
+	if(U<0)U=0;
+
+	setMotor(motor, U, 1);
+
+}
+
+void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
+{
+	if(pid->ctrl > 0) // silnik A
 	{
 		
 	}

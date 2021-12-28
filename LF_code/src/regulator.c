@@ -1,16 +1,10 @@
 #include "regulator.h"
 
-//int8_t Err = 0;
-int8_t lastErr = 0;
-uint8_t BaseTime = 50;
-uint8_t halfBaseTime = 25;
-int8_t ErrSum = 0;
-int8_t DErr = 0;
+extern volatile uint8_t Kp EEMEM;
+extern volatile uint8_t Ki EEMEM;
+extern volatile uint8_t Kd EEMEM;
 
-extern uint8_t Kp EEMEM;
-extern uint8_t Ki EEMEM;
-extern uint8_t Kd EEMEM;
-
+volatile char data[DATA_LENGTH];
 
 void PID_init(PID *pid)
 {
@@ -33,6 +27,7 @@ int8_t calc_err(uint8_t transopt)
     //uint8_t sensor[ 8 ];
     int8_t weights[] = { -4, -3, -2, -1, 1, 2, 3, 4};
     int8_t Err = 0;
+    // UART_printBits(transopt);
 
     for( uint8_t i = 0; i < 8; ++i )
     {
@@ -50,8 +45,13 @@ void regulator_PID(PID *pid, uint8_t optors)
 
     pid->err = calc_err(optors);
     
+    // UART_Send("Err: ");
+	// sprintf(data, "%6d", pid->err );
+	// UART_Send(data);
+	// UART_Send("\n\r");
+
     regulator_P(pid);
-    regulator_I(pid);
+    //regulator_I(pid);
     regulator_D(pid);
     
     PIDout = pid->p + pid->i + pid->d;
@@ -68,7 +68,10 @@ void regulator_PID(PID *pid, uint8_t optors)
     {
         pid->ctrl = PIDout;
     }
-    
+    // UART_Send("PIDout: ");
+	// sprintf(data, "%6d", pid->ctrl );
+	// UART_Send(data);
+	// UART_Send("\n\r");
     pid->last_err = pid->err;
 }
 
@@ -76,31 +79,48 @@ void regulator_PID(PID *pid, uint8_t optors)
 void regulator_P(PID *pid)
 {
     uint8_t kp = eeprom_read_byte(&Kp);
-    int8_t pout;
-    pout = pid->err*kp;
+
+    // UART_Send("\n\rkp: ");
+	// sprintf(data, "%6d", kp );
+	// UART_Send(data);
+
+    int16_t pout;
+    pout = pid->err*kp;// / 10;
+
+    // UART_Send("\n\rpout: ");
+	// sprintf(data, "%6d", pout );
+	// UART_Send(data);
+
     if( pout > pid->p_max)
     {
         pid->p = pid->p_max;
+    // UART_Send("\n\rWarunek > \n\r");
     }
     else if( pout < (-pid->p_max) )
     {
         pid->p = (-pid->p_max);
+        // UART_Send("\n\rWarunek < \n\r");
     }
     else
     {
         pid->p = pout;
+        // UART_Send("\n\rWarunek else \n\r");
     }
+    // UART_Send("Pout: ");
+	// sprintf(data, "%6d", pid->p );
+	// UART_Send(data);
+	// UART_Send("\n\r");
 }
 
 void regulator_I(PID *pid)
 {
     uint8_t ki = eeprom_read_byte(&Ki);
-    int8_t iout;
+    int16_t iout;
 
     // suma do calki
     pid->i_sum += ( pid->err + pid->last_err ) * pid->dt / 2;
 
-    iout = pid->i_sum * ki;
+    iout = pid->i_sum * ki;// / 10;
 
     if( iout > pid->i_max)
     {
@@ -114,15 +134,18 @@ void regulator_I(PID *pid)
     {
         pid->i = iout;
     }
-
+    // UART_Send("Iout: ");
+	// sprintf(data, "%6d", pid->i );
+	// UART_Send(data);
+	// UART_Send("\n\r");
 }
 
 void regulator_D(PID *pid)
 {
     uint8_t kd = eeprom_read_byte(&Kd);
-    int8_t dout;
+    int16_t dout;
 
-    dout = kd * ( pid->err - pid->last_err ) / pid->dt;
+    dout = (( pid->err - pid->last_err ) / pid->dt) * kd;// / 10;
 
     if( dout > pid->d_max)
     {
@@ -136,5 +159,8 @@ void regulator_D(PID *pid)
     {
         pid->d = dout;
     }
-
+    // UART_Send("Dout: ");
+	// sprintf(data, "%6d", pid->d );
+	// UART_Send(data);
+	// UART_Send("\n\r");
 }

@@ -20,13 +20,25 @@ typedef struct {
 	uint8_t mot_speed;
 	uint8_t mot_max_speed;
 	uint8_t mot_min_speed;
+
+    int16_t p;
+    int16_t d;
+    uint8_t p_max;
+    uint8_t d_max;
+	uint8_t pd_max;
+    uint8_t dt;
+    int8_t err;
+    int8_t last_err;
+    int16_t ctrl;
 }Motor;
 
 
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction);
+void setPWM(Motor *motor, uint8_t pwm);
 void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm, uint8_t max_speed, uint8_t min_speed);
 void stopMotor();
 void startMotor();
 void setSpeed(Motor *motor, uint8_t desSpeed);
+void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid);
 
 #endif /* MOTOR_H_ */

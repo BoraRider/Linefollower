@@ -6,11 +6,16 @@
  */
 #include "uart.h"
 
-
-extern volatile uint8_t BlueLed_state EEMEM;
 extern volatile uint8_t motorAspeed;
 extern volatile uint8_t motorBspeed;
 
+// extern volatile uint8_t P_val;
+// extern volatile uint8_t I_val;
+// extern volatile uint8_t D_val;
+
+extern volatile uint8_t Kp EEMEM;
+extern volatile uint8_t Ki EEMEM;
+extern volatile uint8_t Kd EEMEM;
 
 volatile char UART_RxBuf[UART_RX_BUF_SIZE];
 volatile uint8_t uart_buf_counter;
@@ -91,8 +96,15 @@ SIGNAL( USART0_RX_vect)
 	unsigned char data;
 	data = UART_Receive();
 	uint16_t recivedNumber=0;
-	uint8_t speedA=0;
-	uint8_t speedB=0;
+
+
+	// jesli pozostana nieuzywane tzn ze maja wartosc = -1 
+	int16_t speedA = -1;
+	int16_t speedB = -1;
+	int16_t kp_val = -1;
+	int16_t ki_val = -1;
+	int16_t kd_val = -1;
+
 	uint8_t element=0;
 	uint8_t temp1=0;
 	uint8_t iterator=0;
@@ -111,15 +123,32 @@ SIGNAL( USART0_RX_vect)
 			}
 			if(UART_RxBuf[iterator] == 'A')
 			{
+				iterator++;
 				element=1;
 			}
 			if(UART_RxBuf[iterator] == 'B')
 			{
+				iterator++;
 				element=2;
 			}
-
+			// === zapis wartosci dla regulatora PID ===
+			if(UART_RxBuf[iterator] == 'P')
+			{
+				iterator++;
+				element=3;
+			}
+			if(UART_RxBuf[iterator] == 'I')
+			{
+				iterator++;
+				element=4;
+			}
+			if(UART_RxBuf[iterator] == 'D')
+			{
+				iterator++;
+				element=5;
+			}
 			// tworzy numer przeszukujac tablice dostepnych cyfr a nastepnie co kazda iteracje petli przemnaza liczbe przez 10
-			if(UART_RxBuf[iterator] != CR && UART_RxBuf[iterator] != 'A' && UART_RxBuf[iterator] != 'B' && UART_RxBuf[iterator] != ' ')
+			if(UART_RxBuf[iterator] != CR)
 			{
 				recivedNumber = recivedNumber * 10;
 
@@ -136,28 +165,45 @@ SIGNAL( USART0_RX_vect)
 			}
 			if(element == 1){ speedA = recivedNumber; }
 			if(element == 2){ speedB = recivedNumber; }
+			if(element == 3){ kp_val = recivedNumber; }
+			if(element == 4){ ki_val = recivedNumber; }
+			if(element == 5){ kd_val = recivedNumber; }
 
 			iterator++;
 		}
 		// zamiana zmiennych bo inaczej zle przypisuje (do wyjasnienia)
-		motorAspeed = speedA;
-		motorBspeed = speedB;
+		if(speedA>=0) motorAspeed = speedA;
+		if(speedB>=0) motorBspeed = speedB;
 
+		if(kp_val>=0) eeprom_write_byte(&Kp, kp_val);
+		if(ki_val>=0) eeprom_write_byte(&Ki, ki_val);
+		if(kd_val>=0) eeprom_write_byte(&Kd, kd_val);
+
+		// wyswietlanie odebranych danych w formie liczbowej
 		UART_Send("Speed1: ");
 		sprintf(data2, "%5d", speedA);
 		UART_Send(data2);
-		UART_Send("\n\r");
-		UART_Send("Speed2: ");
+		UART_Send("\n\rSpeed2: ");
 		sprintf(data2, "%5d", speedB);
 		UART_Send(data2);
-		UART_Send("\n\r");
 
+		UART_Send("\n\rKp: ");
+		sprintf(data2, "%5d", eeprom_read_byte(&Kp));
+		UART_Send(data2);
+		UART_Send("\n\rKi: ");
+		sprintf(data2, "%5d", eeprom_read_byte(&Ki));
+		UART_Send(data2);
+		UART_Send("\n\rKd: ");
+		sprintf(data2, "%5d", eeprom_read_byte(&Kd));
+		UART_Send(data2);
 
+		UART_Send("\n\rOdebrane RAW:\n\r ");
 		for(uint8_t i=0; i<uart_buf_counter; i++)
 		{
 			UART_Transmit(UART_RxBuf[i]);
 			UART_RxBuf[i]=' ';
 		}
+		UART_Send("\n\r");
 		uart_buf_counter = 0;
 	}
 	else

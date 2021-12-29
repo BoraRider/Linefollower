@@ -143,7 +143,7 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 	PDout = Pout + Dout;
 
 	if(PDout>motor->pd_max) Dout = motor->pd_max;
-	if(PDout<0) PDout = 0;
+	if(PDout<0) PDout = 60;
 
 	motor->p = Pout;
 	motor->d = Dout;

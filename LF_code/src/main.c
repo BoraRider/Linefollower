@@ -11,12 +11,11 @@
 #include "config.h"
 #include "regulator.h"
 
-//predkosci zadane
+// //predkosci zadane
 volatile uint8_t motorAspeed;
 volatile uint8_t motorBspeed;
 
-volatile uint8_t encoder_done_flag;
-volatile uint8_t uart_send_flag;
+// struktury
 Motor motorA, motorB;
 PID pid;
 
@@ -26,10 +25,24 @@ volatile uint8_t Kp EEMEM;
 volatile uint8_t Ki EEMEM;
 volatile uint8_t Kd EEMEM;
 
+// liczniki przerwaniowe
 uint32_t counter_10ms;
 uint32_t counter_encoderA;
 uint32_t counter_encoderB;
-volatile char data[DATA_LENGTH];
+
+// flagi przerwaniowe
+volatile uint8_t encoder_done_flag;
+volatile uint8_t uart_send_flag;
+volatile uint8_t adc_flag;
+
+char data[DATA_LENGTH];
+
+uint16_t conv_result, adc_read=0;
+float real_voltage;
+
+
+
+
 
 // Przerwanie co 10ms
 ISR(TIMER2_COMPA_vect)
@@ -55,11 +68,32 @@ ISR(TIMER2_COMPA_vect)
 		encoder_done_flag = 1;
 		
 	}
-	if(counter_10ms > 25)	// przerwanie co 500ms
+	if(counter_10ms %25 == 0)	// przerwanie co 250ms
 	{
 		tbi(PORTA, RedLed); // swietlna informacja o wyslaniu danych uart
 		uart_send_flag=1;
+
+		// odczyt napiecia akumulatora
+		read_voltage(&conv_result);
+        adc_read = adc_read + conv_result;
+		adc_flag++;
+
 		counter_10ms=0;
+	}
+	if(adc_flag == 2)
+	{
+		adc_flag=0;
+
+		adc_read=adc_read/3;
+
+    	real_voltage = ((float)adc_read *8.4)/1024;
+		
+
+		UART_Send("Napiecie: ");
+		sprintf(data, "%6d", adc_read);
+		UART_Send(data);
+		UART_Send(" V\n\r");
+		adc_read=0;
 	}
 	counter_10ms++;
 }
@@ -78,22 +112,24 @@ int main(void)
 {
 	encoder_done_flag=0;
 	uart_send_flag=0;
+
+	adc_flag=0;
+	adc_read=0;
+
 	counter_encoderA = 0;
 	counter_encoderB = 0;
 	counter_10ms=0;
 
 	configurate();
 
-	
 	PID_init(&pid);
 
 	motorInit( &motorA, 1, 0, 1, 0, 255, 100, 70);
 	motorInit( &motorB, 2, 0, 1, 0, 255, 100, 70);
 	startMotor();
-
 	
 	uint8_t sensors=0x00; // listwa z czujnikami
-	uint8_t SW=0x00; // przelacznik 
+	//uint8_t SW=0x00; // przelacznik 
 	
 	sbi(PORTA, BlueLed);
 	sbi(PORTA, RedLed);
@@ -103,7 +139,7 @@ int main(void)
     while (1)  
     {
 		sensors = PINB;
-		SW = PINA;
+		//SW = PINA;
 
 		
 		
@@ -119,11 +155,11 @@ int main(void)
 				// {
 					
 
-					UART_printBits(sensors);
-					UART_Send("PID S / A / B : ");
-					sprintf(data, "%4d%4d%4d", pid.ctrl, motorA.ctrl, motorB.ctrl);
-					UART_Send(data);
-					UART_Send("\n\r");
+					// UART_printBits(sensors);
+					// UART_Send("PID S / A / B : ");
+					// sprintf(data, "%4d%4d%4d", pid.ctrl, motorA.ctrl, motorB.ctrl);
+					// UART_Send(data);
+					// UART_Send("\n\r");
 
 					uart_send_flag = 0;
 				//}

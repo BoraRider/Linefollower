@@ -41,4 +41,19 @@ void configurate()
 	EICRA |= (1<<ISC10); //| (1<<ISC10); // przerwanie na Rising Edge dla INT1
 	EICRA |= (1<<ISC00); //| (1<<ISC00); // przerwanie na Rising Edge dla INT2
 	EIMSK |= (1<<INT1) | (1<<INT0); // aktywacja przerwan
+
+	// konwerter analog-cyfra (ADC)
+    ADMUX &= ~(1<<REFS1); // wewnetrze vcc
+    ADMUX |= (1<<REFS0) | (1<<ADLAR); // wewnetrze vcc
+    ADCSRA |= (1<<ADEN); // wlaczenie ADC
+
+}
+
+void read_voltage(uint16_t * conv_result)
+{
+    ADMUX = (ADMUX & 0xf0) | 0;
+    ADCSRA |= (1<<ADSC); // start conversion
+    while(ADCSRA & (1<<ADSC));
+    uint16_t tmp = ADCL>>6;
+    conv_result = ADCH<<2 | tmp;
 }

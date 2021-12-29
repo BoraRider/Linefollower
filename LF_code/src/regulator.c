@@ -25,7 +25,7 @@ void PID_init(PID *pid)
 int8_t calc_err(uint8_t transopt)
 {
     //uint8_t sensor[ 8 ];
-    int8_t weights[] = { -4, -3, -2, -1, 1, 2, 3, 4};
+    int8_t weights[] = { -10, -8, -4, -1, 1, 4, 8, 10};
     int8_t Err = 0;
     // UART_printBits(transopt);
 

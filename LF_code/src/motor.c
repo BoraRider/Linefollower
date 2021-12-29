@@ -8,6 +8,7 @@
 
 #define KP 5
 #define KD 5
+#define LS 120
 
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 {
@@ -97,9 +98,9 @@ void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t sp
 
 	motor->p = 0;
     motor->d = 0;
-    motor->p_max = 200;
-    motor->d_max = 200;
-	motor->pd_max = 255;
+    motor->p_max = 150;
+    motor->d_max = 150;
+	motor->pd_max = 130;
     motor->dt = 50;
     motor->err = 0;
     motor->last_err = 0;
@@ -131,7 +132,7 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 		Pout = (-motor->p_max);
 	}
 
-	Dout = KD * ( motor->err - motor->last_err ) / motor->dt;
+	Dout = ( ( motor->err - motor->last_err ) / motor->dt) * KD /10;
 
 	if(Dout>motor->d_max){
 		Dout=motor->d_max;
@@ -139,14 +140,16 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 	if(Dout< (-motor->d_max) ){
 		Dout = (-motor->d_max);
 	}
-	PDout = Dout + Pout;
+	PDout = Pout;// + Dout;
 
-	if(PDout>motor->pd_max)Dout=motor->pd_max;
-	if(PDout<0)PDout=0;
+	if(PDout>motor->pd_max) Dout = motor->pd_max;
+	if(PDout<0) PDout = 0;
 
 	motor->p = Pout;
 	motor->d = Dout;
 	motor->ctrl = PDout;
+
+	motor->last_err = motor->err;
 
 	setPWM(motor, motor->ctrl);
 }
@@ -154,34 +157,67 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 // funkcja interpretujaca wynik regulatora PID dla wykrywania lini
 void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
 {
-	if(pid->ctrl > 0) // silnik A
+	uint8_t control;
+
+	if(pid->ctrl > 10) // silnik B
 	{
-		if(pid->ctrl > motorA->mot_max_speed) // ustawia max speed
+		// zakladajac ze min speed to 40
+		// PID daje regulacje 20
+		// na silnik B idze 60
+		// na silnik A idzie 40
+		// nastepuje skret w strone A
+		//setPWM(motorB, 50);
+		//setPWM(motorA, 110);
+		control = motorA->mot_min_speed + pid->ctrl;
+
+		setSpeed(motorB, motorB->mot_min_speed-20);
+		//setPWM(motorA, LS);
+		//control = control * 11 / 3;
+
+		if(control > motorA->mot_max_speed) // ustawia max speed//if(control > 200)
 		{
 			setSpeed(motorA, motorA->mot_max_speed);
-		}
-		else if(pid->ctrl < motorA->mot_min_speed) // ustawia min speed
-		{
-			setSpeed(motorA, motorA->mot_min_speed);
+			//setPWM(motorB, 200);
 		}
 		else // ustawia predkosc bezposrednio z PID'a
 		{
-			setSpeed(motorA, pid->ctrl); 
+			setSpeed(motorA, control);
+			//setPWM(motorB, control);
 		}
 	}
-	if(pid->ctrl < 0) // silnik B
+	else if(pid->ctrl < -10) // silnik A
 	{
-		if((-pid->ctrl) > motorB->mot_max_speed) // ustawia max speed
+		//setPWM(motorA, 50);
+		//setPWM(motorB, 110);
+
+		// zakladajac ze min speed to 40
+		// PID daje regulacje 20
+		// na silnik A idze 60
+		// na silnik B idzie 40
+		// nastepuje skret w strone B
+		control = motorB->mot_min_speed - pid->ctrl; // wartosc (pid->ctrl) jest ujemna wiec -(-) = +
+
+		setSpeed(motorA, motorA->mot_min_speed-20);
+		//setPWM(motorB, LS);
+		//control = control * 11 / 3;
+
+		if(control > motorB->mot_max_speed) // ustawia max speed//if(control > 200)
 		{
 			setSpeed(motorB, motorB->mot_max_speed);
-		}
-		else if((-pid->ctrl) < motorB->mot_min_speed) // ustawia min speed
-		{
-			setSpeed(motorB, motorB->mot_min_speed);
+			//setPWM(motorA, 200);
 		}
 		else // ustawia predkosc bezposrednio z PID'a
 		{
-			setSpeed(motorB, (-pid->ctrl)); 
+			setSpeed(motorB, control);
+			//setPWM(motorA, control);
 		}
+
+	}
+	else
+	{
+		//setPWM(motorB, 100);
+		//setPWM(motorA, 100);
+		setSpeed(motorB, motorB->mot_min_speed);
+		setSpeed(motorA, motorA->mot_min_speed);
 	}
 }

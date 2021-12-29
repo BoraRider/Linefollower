@@ -100,8 +100,8 @@ void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t sp
     motor->d = 0;
     motor->p_max = 150;
     motor->d_max = 150;
-	motor->pd_max = 130;
-    motor->dt = 50;
+	motor->pd_max = 250;
+    motor->dt = 10;
     motor->err = 0;
     motor->last_err = 0;
     motor->ctrl = 0;
@@ -140,7 +140,7 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 	if(Dout< (-motor->d_max) ){
 		Dout = (-motor->d_max);
 	}
-	PDout = Pout;// + Dout;
+	PDout = Pout + Dout;
 
 	if(PDout>motor->pd_max) Dout = motor->pd_max;
 	if(PDout<0) PDout = 0;
@@ -170,7 +170,7 @@ void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
 		//setPWM(motorA, 110);
 		control = motorA->mot_min_speed + pid->ctrl;
 
-		setSpeed(motorB, motorB->mot_min_speed-20);
+		setSpeed(motorB, motorB->mot_min_speed/2);
 		//setPWM(motorA, LS);
 		//control = control * 11 / 3;
 
@@ -197,7 +197,7 @@ void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
 		// nastepuje skret w strone B
 		control = motorB->mot_min_speed - pid->ctrl; // wartosc (pid->ctrl) jest ujemna wiec -(-) = +
 
-		setSpeed(motorA, motorA->mot_min_speed-20);
+		setSpeed(motorA, motorA->mot_min_speed/2);
 		//setPWM(motorB, LS);
 		//control = control * 11 / 3;
 

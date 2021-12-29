@@ -15,7 +15,7 @@ void PID_init(PID *pid)
     pid->i_max = 100;
     pid->d_max = 100;
     pid->pid_max = 200;
-    pid->dt = 50;
+    pid->dt = 10;
     pid->err = 0;
     pid->i_sum = 0;
     pid->last_err = 0;
@@ -43,7 +43,15 @@ void regulator_PID(PID *pid, uint8_t optors)
 {
     int16_t PIDout;
 
-    pid->err = calc_err(optors);
+    if(optors == 0)
+    {
+        pid->err = pid->last_err;
+    }
+    else
+    {
+        pid->err = calc_err(optors);
+    }
+    
     
     // UART_Send("Err: ");
 	// sprintf(data, "%6d", pid->err );
@@ -145,7 +153,7 @@ void regulator_D(PID *pid)
     uint8_t kd = eeprom_read_byte(&Kd);
     int16_t dout;
 
-    dout = (( pid->err - pid->last_err ) / pid->dt) * kd;// / 10;
+    dout = (( pid->err - pid->last_err ) * kd / pid->dt) ;// / 10;
 
     if( dout > pid->d_max)
     {

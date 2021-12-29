@@ -34,6 +34,17 @@ volatile char data[DATA_LENGTH];
 // Przerwanie co 10ms
 ISR(TIMER2_COMPA_vect)
 {
+	if( !( PINA & (1<<Sw) ) )
+	{
+		startMotor();
+		regulator_PID(&pid, PINB);
+		pid_interpreter(&motorA, &motorB, &pid);
+	}
+	if( PINA & (1<<Sw) )
+	{
+		stopMotor();
+	}
+
 
 	if(counter_10ms %5 == 0)	// przerwanie co 50ms
 	{
@@ -76,8 +87,8 @@ int main(void)
 	
 	PID_init(&pid);
 
-	motorInit( &motorA, 1, 0, 1, 0, 255, 100, 40);
-	motorInit( &motorB, 2, 0, 1, 0, 255, 100, 40);
+	motorInit( &motorA, 1, 0, 1, 0, 255, 100, 70);
+	motorInit( &motorB, 2, 0, 1, 0, 255, 100, 70);
 	startMotor();
 
 	
@@ -87,15 +98,15 @@ int main(void)
 	sbi(PORTA, BlueLed);
 	sbi(PORTA, RedLed);
 
-	setMotor( &motorA,50,1);
-	setMotor( &motorB,50,1);
+	setMotor( &motorA,0,1);
+	setMotor( &motorB,0,1);
     while (1)  
     {
 		sensors = PINB;
 		SW = PINA;
 
-		regulator_PID(&pid, sensors);
-		pid_interpreter(&motorA, &motorB, &pid);
+		
+		
 
 		if(encoder_done_flag == 1)
 		{
@@ -104,8 +115,8 @@ int main(void)
 			encoder_done_flag = 0;
 			if(uart_send_flag == 1)
 			{
-				if( !( SW & (1<<Sw) ) )
-				{
+				// if( !( SW & (1<<Sw) ) )
+				// {
 					
 
 					UART_printBits(sensors);
@@ -115,25 +126,25 @@ int main(void)
 					UART_Send("\n\r");
 
 					uart_send_flag = 0;
-				}
-				else
-				{
-					UART_Send("Az: ");
-					sprintf(data, "%3d", motorAspeed );
-					UART_Send(data);
-					UART_Send(" Aa: ");
-					sprintf(data, "%3d", motorA.mot_speed );
-					UART_Send(data);
+				//}
+				// else
+				// {
+					// UART_Send("Az: ");
+					// sprintf(data, "%3d", motorAspeed );
+					// UART_Send(data);
+					// UART_Send(" Aa: ");
+					// sprintf(data, "%3d", motorA.mot_speed );
+					// UART_Send(data);
 
-					UART_Send(" | Bz: ");
-					sprintf(data, "%3d", motorBspeed );
-					UART_Send(data);
-					UART_Send(" Ba: ");
-					sprintf(data, "%3d", motorB.mot_speed );
-					UART_Send(data);
-					UART_Send(" \n\r");
-					uart_send_flag = 0;
-				}
+					// UART_Send(" | Bz: ");
+					// sprintf(data, "%3d", motorBspeed );
+					// UART_Send(data);
+					// UART_Send(" Ba: ");
+					// sprintf(data, "%3d", motorB.mot_speed );
+					// UART_Send(data);
+					// UART_Send(" \n\r");
+					// uart_send_flag = 0;
+				//}
 			}
 		}
 

@@ -6,9 +6,12 @@
  */
 #include "uart.h"
 
+// zmienne wykorzystywane w main
 extern volatile uint8_t motorAspeed;
 extern volatile uint8_t motorBspeed;
+extern volatile uint8_t startstop;	// zmienna odpowiedzialna za start robota
 
+// zmienne do EEPROM
 extern volatile uint8_t Kp EEMEM;
 extern volatile uint8_t Ki EEMEM;
 extern volatile uint8_t Kd EEMEM;
@@ -97,6 +100,18 @@ SIGNAL( USART0_RX_vect)
 	data = UART_Receive();
 	uint16_t recivedNumber=0;
 
+	// pierwsze sprawdzenie czy wykryto procedure start/stop
+	if(data == 'S')
+	{
+		if(startstop == 0)
+		{
+			startstop = 1;
+		}
+		else
+		{
+			startstop = 0;
+		}
+	}
 
 	// jesli pozostana nieuzywane tzn ze maja wartosc = -1 
 	int16_t speedA = -1;

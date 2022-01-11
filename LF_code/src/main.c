@@ -14,6 +14,7 @@
 // //predkosci zadane
 volatile uint8_t motorAspeed;
 volatile uint8_t motorBspeed;
+volatile uint8_t startstop;
 
 // struktury
 Motor motorA, motorB;
@@ -50,24 +51,27 @@ float real_voltage;
 ISR(TIMER2_COMPA_vect)
 {
 
-		if( !( PINA & (1<<Sw) ) )
-		{
-			startMotor();
-			regulator_PID(&pid, PINB);
-			pid_interpreter(&motorA, &motorB, &pid);
+	//if( !( PINA & (1<<Sw)) )
+	if( (startstop == 1)  )
+	{
+		startMotor();
+		regulator_PID(&pid, PINB);
+		pid_interpreter(&motorA, &motorB, &pid);
 
-			//setSpeed(&motorA, motorAspeed);
-			//setSpeed(&motorB, motorBspeed);
+		//setSpeed(&motorA, motorAspeed);
+		//setSpeed(&motorB, motorBspeed);
+   		//UART_Send("PIDout: ");
+ 		//sprintf(data, "%4d", pid.ctrl );
+ 		//UART_Send(data);
 
-     		//UART_Send("PIDout: ");
-	 		//sprintf(data, "%4d", pid.ctrl );
-	 		//UART_Send(data);
+	}
+		
+	if(startstop == 0 )
+	{
+		stopMotor();
+	}
+		
 
-		}
-		if( PINA & (1<<Sw) )
-		{
-			stopMotor();
-		}
 
 	if(counter_10ms %5 == 0)	// przerwanie co 50ms
 	{
@@ -76,9 +80,6 @@ ISR(TIMER2_COMPA_vect)
 		counter_encoderA = 0;
 		counter_encoderB = 0;
 		encoder_done_flag = 1;
-		
-
-		
 	}
 	
 	if(counter_10ms %100 == 0)	// przerwanie co 1000ms
@@ -141,6 +142,7 @@ int main(void)
 	counter_encoderA = 0;
 	counter_encoderB = 0;
 	counter_10ms=0;
+	startstop=0;
 
 	configurate();
 

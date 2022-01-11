@@ -6,9 +6,12 @@
  */ 
 #include "motor.h"
 
-#define KP 5
-#define KD 5
+#define KP 1
+#define KD 100
 #define LS 120
+
+extern volatile uint8_t sKp EEMEM;
+extern volatile uint8_t sKd EEMEM;
 
 void setMotor(Motor *motor, uint8_t pwm, uint8_t direction)
 {
@@ -86,25 +89,27 @@ void setPWM(Motor *motor, uint8_t pwm)
 	motor->mot_pwm = pwm;
 }
 
-void motorInit(Motor *motor, uint8_t id, uint8_t pwm, uint8_t direct, uint8_t speed, uint8_t max_pwm, uint8_t max_speed, uint8_t min_speed)
+void motorInit(Motor *motor, uint8_t id)
 {
 	motor->mot_id = id;
-	motor->mot_direction = direct;
-	motor->mot_pwm = pwm;
-	motor->mot_speed = speed;
-	motor->mot_max_pwm = max_pwm;
-	motor->mot_max_speed = max_speed;
-	motor->mot_min_speed = min_speed;
+	motor->mot_direction = 1;
+	motor->mot_pwm = 0;
+	motor->mot_speed = 0;
+	motor->mot_max_pwm = 160;
+	motor->mot_max_speed = 100;
+	motor->mot_min_speed = 70;
 
 	motor->p = 0;
     motor->d = 0;
-    motor->p_max = 150;
-    motor->d_max = 150;
-	motor->pd_max = 250;
-    motor->dt = 10;
+    motor->p_max = 120;
+    motor->d_max = 120;
+	motor->pd_max = 120;
+    motor->dt = 50;
     motor->err = 0;
     motor->last_err = 0;
     motor->ctrl = 0;
+
+	motor->mot_speed_des=0;
 }
 
 void stopMotor(){
@@ -121,9 +126,13 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 	
 	int16_t Pout, Dout, PDout;
 
-	motor->err = desSpeed - motor->mot_speed;
+	uint8_t kp = eeprom_read_byte(&sKp);
+	uint8_t kd = eeprom_read_byte(&sKd);
 
-	Pout = motor->err * KP;
+	motor->err = desSpeed - motor->mot_speed; //60 40
+												//60 50
+
+	Pout = motor->err * kp;
 
 	if(Pout>motor->p_max){
 		Pout=motor->p_max;
@@ -132,7 +141,7 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 		Pout = (-motor->p_max);
 	}
 
-	Dout = ( ( motor->err - motor->last_err ) / motor->dt) * KD /10;
+	Dout = ( ( motor->err - motor->last_err ) * kd / motor->dt) ;
 
 	if(Dout>motor->d_max){
 		Dout=motor->d_max;
@@ -143,7 +152,7 @@ void setSpeed(Motor *motor, uint8_t desSpeed)
 	PDout = Pout + Dout;
 
 	if(PDout>motor->pd_max) Dout = motor->pd_max;
-	if(PDout<0) PDout = 60;
+	if(PDout<0) PDout = 0;
 
 	motor->p = Pout;
 	motor->d = Dout;
@@ -166,30 +175,25 @@ void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
 		// na silnik B idze 60
 		// na silnik A idzie 40
 		// nastepuje skret w strone A
-		//setPWM(motorB, 50);
-		//setPWM(motorA, 110);
 		control = motorA->mot_min_speed + pid->ctrl;
 
-		setSpeed(motorB, motorB->mot_min_speed/2);
-		//setPWM(motorA, LS);
-		//control = control * 11 / 3;
+		setSpeed(motorB, motorB->mot_min_speed);
 
 		if(control > motorA->mot_max_speed) // ustawia max speed//if(control > 200)
 		{
+			motorA->mot_speed_des = motorA->mot_max_speed;
 			setSpeed(motorA, motorA->mot_max_speed);
-			//setPWM(motorB, 200);
+			
 		}
 		else // ustawia predkosc bezposrednio z PID'a
 		{
+			motorA->mot_speed_des = control;
 			setSpeed(motorA, control);
-			//setPWM(motorB, control);
+
 		}
 	}
 	else if(pid->ctrl < -10) // silnik A
 	{
-		//setPWM(motorA, 50);
-		//setPWM(motorB, 110);
-
 		// zakladajac ze min speed to 40
 		// PID daje regulacje 20
 		// na silnik A idze 60
@@ -197,26 +201,22 @@ void pid_interpreter(Motor *motorA, Motor *motorB, PID *pid)
 		// nastepuje skret w strone B
 		control = motorB->mot_min_speed - pid->ctrl; // wartosc (pid->ctrl) jest ujemna wiec -(-) = +
 
-		setSpeed(motorA, motorA->mot_min_speed/2);
-		//setPWM(motorB, LS);
-		//control = control * 11 / 3;
+		setSpeed(motorA, motorA->mot_min_speed);
 
 		if(control > motorB->mot_max_speed) // ustawia max speed//if(control > 200)
 		{
+			motorB->mot_speed_des = motorB->mot_max_speed;
 			setSpeed(motorB, motorB->mot_max_speed);
-			//setPWM(motorA, 200);
 		}
 		else // ustawia predkosc bezposrednio z PID'a
 		{
+			motorB->mot_speed_des = control;
 			setSpeed(motorB, control);
-			//setPWM(motorA, control);
 		}
 
 	}
 	else
 	{
-		//setPWM(motorB, 100);
-		//setPWM(motorA, 100);
 		setSpeed(motorB, motorB->mot_min_speed);
 		setSpeed(motorA, motorA->mot_min_speed);
 	}

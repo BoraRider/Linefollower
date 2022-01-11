@@ -24,18 +24,13 @@ void PID_init(PID *pid)
 
 int8_t calc_err(uint8_t transopt)
 {
-    //uint8_t sensor[ 8 ];
-    int8_t weights[] = { -10, -8, -4, -1, 1, 4, 8, 10};
+    int8_t weights[] = { -8, -4, -2, -1, 1, 2, 4, 8};
     int8_t Err = 0;
-    // UART_printBits(transopt);
-
     for( uint8_t i = 0; i < 8; ++i )
     {
-        //sensor[ i ] = transopt % 2;
         Err += ( transopt % 2 ) * weights[ i ];
         transopt /= 2;
     }
-
     return Err;
 }
 
@@ -76,10 +71,6 @@ void regulator_PID(PID *pid, uint8_t optors)
     {
         pid->ctrl = PIDout;
     }
-    // UART_Send("PIDout: ");
-	// sprintf(data, "%6d", pid->ctrl );
-	// UART_Send(data);
-	// UART_Send("\n\r");
     pid->last_err = pid->err;
 }
 
@@ -126,7 +117,7 @@ void regulator_I(PID *pid)
     int16_t iout;
 
     // suma do calki
-    pid->i_sum += ( pid->err + pid->last_err ) * pid->dt / 2;
+    pid->i_sum += ( pid->err + pid->last_err ) * pid->dt;
 
     iout = pid->i_sum * ki;// / 10;
 
@@ -153,7 +144,7 @@ void regulator_D(PID *pid)
     uint8_t kd = eeprom_read_byte(&Kd);
     int16_t dout;
 
-    dout = (( pid->err - pid->last_err ) * kd / pid->dt) ;// / 10;
+    dout = (( pid->err - pid->last_err ) * kd / pid->dt);
 
     if( dout > pid->d_max)
     {

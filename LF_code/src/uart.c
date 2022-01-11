@@ -9,13 +9,12 @@
 extern volatile uint8_t motorAspeed;
 extern volatile uint8_t motorBspeed;
 
-// extern volatile uint8_t P_val;
-// extern volatile uint8_t I_val;
-// extern volatile uint8_t D_val;
-
 extern volatile uint8_t Kp EEMEM;
 extern volatile uint8_t Ki EEMEM;
 extern volatile uint8_t Kd EEMEM;
+
+extern volatile uint8_t sKp EEMEM;
+extern volatile uint8_t sKd EEMEM;
 
 volatile char UART_RxBuf[UART_RX_BUF_SIZE];
 volatile uint8_t uart_buf_counter;
@@ -29,10 +28,11 @@ void UART_Init()
 	UBRR0H = (unsigned char)(MYUBRR>>8);
 	UBRR0L = (unsigned char)MYUBRR;
 	// aktywacja transmisji i odbioru
-	//UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	//UCSR0B |= (1<<RXEN0)|(1<<TXEN0);
 	UCSR0B |= 0b00011000;
 	// format 8 bajtow, 1 bit stopu
-	//UCSR0C = (1<<USBS0)|(3<<UCSZ00);
+	//-----UCSR0C = (1<<USBS0)|(3<<UCSZ00);
+	//UCSR0C = (1<<USBS0)|(1<<UCSZ00)|(1<<UCSZ01);
 	UCSR0C = 0b00000110;
 
 	// aktywacja przerwan
@@ -44,9 +44,9 @@ void UART_Init()
 // Wyslanie pojedynczego znaku
 void UART_Transmit( char data )
 {
-	/* Wait for empty transmit buffer */
+	// czekanie na pusty bufor
 	while ( !( UCSR0A & (1<<UDRE0)) );
-	/* Put data into buffer, sends the data */
+	// zapis danych do buforu
 	UDR0 = data;
 }
 
@@ -105,14 +105,17 @@ SIGNAL( USART0_RX_vect)
 	int16_t ki_val = -1;
 	int16_t kd_val = -1;
 
+	int16_t skp_val = -1;
+	int16_t skd_val = -1;
+
 	uint8_t element=0;
 	uint8_t temp1=0;
 	uint8_t iterator=0;
 	char data2[DATA_LENGTH];
 
 	if(data == CR){
-		UART_Send("\n\rZnak CR\n\r");
-		UART_Send("Odebrane dane:\n\r");
+		//UART_Send("\n\rZnak CR\n\r");
+		//UART_Send("Odebrane dane:\n\r");
 
 		while(iterator < uart_buf_counter)
 		{
@@ -147,6 +150,16 @@ SIGNAL( USART0_RX_vect)
 				iterator++;
 				element=5;
 			}
+			if(UART_RxBuf[iterator] == 'p')
+			{
+				iterator++;
+				element=6;
+			}
+			if(UART_RxBuf[iterator] == 'd')
+			{
+				iterator++;
+				element=7;
+			}
 			// tworzy numer przeszukujac tablice dostepnych cyfr a nastepnie co kazda iteracje petli przemnaza liczbe przez 10
 			if(UART_RxBuf[iterator] != CR)
 			{
@@ -168,7 +181,8 @@ SIGNAL( USART0_RX_vect)
 			if(element == 3){ kp_val = recivedNumber; }
 			if(element == 4){ ki_val = recivedNumber; }
 			if(element == 5){ kd_val = recivedNumber; }
-
+			if(element == 6){ skp_val = recivedNumber; }
+			if(element == 7){ skd_val = recivedNumber; }
 			iterator++;
 		}
 		// zamiana zmiennych bo inaczej zle przypisuje (do wyjasnienia)
@@ -178,6 +192,9 @@ SIGNAL( USART0_RX_vect)
 		if(kp_val>=0) eeprom_write_byte(&Kp, kp_val);
 		if(ki_val>=0) eeprom_write_byte(&Ki, ki_val);
 		if(kd_val>=0) eeprom_write_byte(&Kd, kd_val);
+
+		if(skp_val>=0) eeprom_write_byte(&sKp, skp_val);
+		if(skd_val>=0) eeprom_write_byte(&sKd, skd_val);
 
 		// wyswietlanie odebranych danych w formie liczbowej
 		UART_Send("Speed1: ");
@@ -197,13 +214,13 @@ SIGNAL( USART0_RX_vect)
 		sprintf(data2, "%5d", eeprom_read_byte(&Kd));
 		UART_Send(data2);
 
-		UART_Send("\n\rOdebrane RAW:\n\r ");
+		//UART_Send("\n\rOdebrane RAW:\n\r ");
 		for(uint8_t i=0; i<uart_buf_counter; i++)
 		{
-			UART_Transmit(UART_RxBuf[i]);
+			//UART_Transmit(UART_RxBuf[i]);
 			UART_RxBuf[i]=' ';
 		}
-		UART_Send("\n\r");
+		//UART_Send("\n\r");
 		uart_buf_counter = 0;
 	}
 	else
